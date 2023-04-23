@@ -1,0 +1,838 @@
+---
+title: "Capstone Models"
+output: html_document
+date: "2023-04-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+```
+
+## Importing Data
+
+```{r, warning=FALSE}
+library(readxl)
+district = read_excel("/Users/gtbut/Documents/Personal/Excel Files/All District.xlsx")
+
+
+FR = read_excel("/Users/gtbut/Documents/Personal/Excel Files/FR_Compare.xlsx")
+FR2 = FR[,c("Test Results Count_Number Tested", "Test Results Count_Number Passing")]
+FR3 = FR[,c("Free or Reduced_Number Tested", "Free or Reduced_Number Passing")]
+
+Ethnicity = read_excel("/Users/gtbut/Documents/Personal/Excel Files/Ethnicity.xlsx") 
+
+RBBB = read_excel("/Users/gtbut/Documents/Personal/Excel Files/RBBB.xlsx", guess_max = 100000)
+RBBB2 = RBBB[,c("Student Id","School","District","CalendarYear","Grade","Gender","Ethnicity","F&R Status","Participate","%Attended","ParentQ1","ParentQ2","ParentQ3","ParentQ4","ConcentrationPre","ConcentrationPost","EnjoymentPre","EnjoymentPost","ComprehensionPre","ComprehensionPost","AttendancePre","AttendancePost","LeadSkillBigPre","LeadSkillBigPost","VolOppBigPre","VolOppBigPost","PosRelBigPre","PosRelBigPost","EnjoyBigPre","EnjoyBigPost","EngageBigPre","EngageBigPost","AcadExpBigPre","AcadExpBigPost","AttendBigPre","GalileoScorePre","GalileoScorePost","Galileo%Pre","Galileo%Post","DIBELSCompositeScorePre","DIBELSCompositeScorePost","DIBELSCompositePre","DIBELSCompositePost","Illumpre","Illumpost")]
+```
+
+```{r}
+district_clean = district
+
+district_clean$`Percent Performance Level 1` = ifelse(is.na(district_clean$`Percent Performance Level 1`) | is.na(district_clean$`Percent Performance Level 2`), (100 - district_clean$`Percent Performance Level 3` - district_clean$`Percent Performance Level 4`)/2, district_clean$`Percent Performance Level 1`)
+
+district_clean$`Percent Performance Level 2` = ifelse(is.na(district_clean$`Percent Performance Level 1`) | is.na(district_clean$`Percent Performance Level 2`), (100 - district_clean$`Percent Performance Level 3` - district_clean$`Percent Performance Level 4`)/2, district_clean$`Percent Performance Level 2`)
+
+district_clean$`Percent Performance Level 3` = ifelse(is.na(district_clean$`Percent Performance Level 3`) | is.na(district_clean$`Percent Performance Level 4`), (100 - district_clean$`Percent Performance Level 2` - district_clean$`Percent Performance Level 1`)/2, district_clean$`Percent Performance Level 3`)
+
+district_clean$`Percent Performance Level 4` = ifelse(is.na(district_clean$`Percent Performance Level 3`) | is.na(district_clean$`Percent Performance Level 4`), (100 - district_clean$`Percent Performance Level 2` - district_clean$`Percent Performance Level 1`)/2, district_clean$`Percent Performance Level 4`)
+
+district_clean$`Percent Passing` = ifelse(is.na(district_clean$`Percent Passing`), district_clean$`Percent Performance Level 3` + district_clean$`Percent Performance Level 4`, district_clean$`Percent Passing`)
+
+
+district_clean$`Number Perf1` = round(district_clean$`Percent Performance Level 1`*district_clean$`Number Tested`/100, 0)
+district_clean$`Number Perf2` = round(district_clean$`Percent Performance Level 2`*district_clean$`Number Tested`/100, 0)
+district_clean$`Number Perf3` = round(district_clean$`Percent Performance Level 3`*district_clean$`Number Tested`/100, 0)
+district_clean$`Number Perf4` = round(district_clean$`Percent Performance Level 4`*district_clean$`Number Tested`/100, 0)
+district_clean$`Number Passing` = round(district_clean$`Percent Passing`*district_clean$`Number Tested`/100, 0)
+
+```
+
+```{r}
+income = district_clean[,c("Percent Passing","Median_Income","Mean_Income", "Poverty rate", "Location", "Total per student spending")]
+district3 = district_clean[,c("Percent Passing","Fiscal Year")]
+```
+
+
+```{r}
+ethnicity_clean = Ethnicity
+
+ethnicity_clean$`Percent Performance Level 1` = ifelse(is.na(ethnicity_clean$`Percent Performance Level 1`) | is.na(ethnicity_clean$`Percent Performance Level 2`), (100 - ethnicity_clean$`Percent Performance Level 3` - ethnicity_clean$`Percent Performance Level 4`)/2, ethnicity_clean$`Percent Performance Level 1`)
+
+ethnicity_clean$`Percent Performance Level 2` = ifelse(is.na(ethnicity_clean$`Percent Performance Level 1`) | is.na(ethnicity_clean$`Percent Performance Level 2`), (100 - ethnicity_clean$`Percent Performance Level 3` - ethnicity_clean$`Percent Performance Level 4`)/2, ethnicity_clean$`Percent Performance Level 2`)
+
+ethnicity_clean$`Percent Performance Level 3` = ifelse(is.na(ethnicity_clean$`Percent Performance Level 3`) | is.na(ethnicity_clean$`Percent Performance Level 4`), (100 - ethnicity_clean$`Percent Performance Level 2` - ethnicity_clean$`Percent Performance Level 1`)/2, ethnicity_clean$`Percent Performance Level 3`)
+
+ethnicity_clean$`Percent Performance Level 4` = ifelse(is.na(ethnicity_clean$`Percent Performance Level 3`) | is.na(ethnicity_clean$`Percent Performance Level 4`), (100 - ethnicity_clean$`Percent Performance Level 2` - ethnicity_clean$`Percent Performance Level 1`)/2, ethnicity_clean$`Percent Performance Level 4`)
+
+ethnicity_clean$`Percent Passing` = ifelse(is.na(ethnicity_clean$`Percent Passing`), ethnicity_clean$`Percent Performance Level 3` + ethnicity_clean$`Percent Performance Level 4`, ethnicity_clean$`Percent Passing`)
+
+
+ethnicity_clean$`Number Perf1` = round(ethnicity_clean$`Percent Performance Level 1`*ethnicity_clean$`Number Tested`/100, 0)
+ethnicity_clean$`Number Perf2` = round(ethnicity_clean$`Percent Performance Level 2`*ethnicity_clean$`Number Tested`/100, 0)
+ethnicity_clean$`Number Perf3` = round(ethnicity_clean$`Percent Performance Level 3`*ethnicity_clean$`Number Tested`/100, 0)
+ethnicity_clean$`Number Perf4` = round(ethnicity_clean$`Percent Performance Level 4`*ethnicity_clean$`Number Tested`/100, 0)
+
+
+ethnicity_clean = subset(ethnicity_clean , Subgroup %in% c('White','Hispanic/Latino','African American','American Indian/Alaska Native','Asian','Native Hawaiian/Other Pacific Islander'))
+Ethnicity2 = ethnicity_clean[,c("Subgroup", "Test Level", "County", "Number Tested", "Number Passing", "Percent Passing", "Population", "Median_Income", "Mean_Income","Location","Special education population","Poverty rate","Instruction","Total per student spending","District average teacher salary", "District amount from Classroom Site Fund", "Students attending", "Number of schools")]
+
+gender_clean = subset(ethnicity_clean , Subgroup %in% c('Male', 'Female'))
+
+Gender2 = gender_clean[,c("Subgroup", "Test Level", "County", "Number Tested", "Number Passing", "Percent Passing", "Population", "Median_Income", "Mean_Income")]
+```
+
+
+```{r}
+
+RBBB3 = RBBB2[,c("Student Id","School","District","CalendarYear","Participate","%Attended","GalileoScorePre", "GalileoScorePost","Galileo%Pre", "Galileo%Post","DIBELSCompositeScorePre","DIBELSCompositeScorePost","Illumpre","Illumpost")]
+
+RBBB3$`Galileo%Pre` = ifelse(RBBB3$`Galileo%Pre` > 100, RBBB3$`Galileo%Pre`/10, RBBB3$`Galileo%Pre`)
+RBBB3$`Galileo%Post` = ifelse(RBBB3$`Galileo%Post` > 100, RBBB3$`Galileo%Post`/10, RBBB3$`Galileo%Post`)
+
+RBBB3$DPre = ifelse(RBBB3$DIBELSCompositeScorePre > 0 & RBBB3$DIBELSCompositeScorePre < 314, 1, ifelse(RBBB3$DIBELSCompositeScorePre >= 314 & RBBB3$DIBELSCompositeScorePre < 332, 2,  ifelse(RBBB3$DIBELSCompositeScorePre >= 332 & RBBB3$DIBELSCompositeScorePre < 365, 3,                                  ifelse(RBBB3$DIBELSCompositeScorePre >= 365 & RBBB3$DIBELSCompositeScorePre < 600, 4, NA))))
+
+RBBB3$GPre = ifelse(RBBB3$`Galileo%Pre` > 0 & RBBB3$`Galileo%Pre` < 40, 1, ifelse(RBBB3$`Galileo%Pre` >= 40 & RBBB3$`Galileo%Pre` < 60, 2, ifelse(RBBB3$`Galileo%Pre` >= 60 & RBBB3$`Galileo%Pre` < 80, 3, ifelse(RBBB3$`Galileo%Pre` >= 80 & RBBB3$`Galileo%Pre` < 101, 4, NA))))
+
+
+
+RBBB3$DPost = ifelse(RBBB2$DIBELSCompositeScorePost > 0 & RBBB2$DIBELSCompositeScorePost < 424, 1, ifelse(RBBB3$DIBELSCompositeScorePost >= 424 & RBBB3$DIBELSCompositeScorePost < 442, 2, ifelse(RBBB3$DIBELSCompositeScorePost >= 442 & RBBB3$DIBELSCompositeScorePost < 467, 3, ifelse(RBBB3$DIBELSCompositeScorePost >= 467 & RBBB3$DIBELSCompositeScorePost < 600, 4, NA))))
+
+RBBB3$GPost = ifelse(RBBB2$`Galileo%Post` > 0 & RBBB2$`Galileo%Post` < 40, 1, ifelse(RBBB3$`Galileo%Post` >= 40 & RBBB3$`Galileo%Post` < 60, 2, ifelse(RBBB3$`Galileo%Post` >= 60 & RBBB3$`Galileo%Post` < 80, 3, ifelse(RBBB3$`Galileo%Post` >= 80 & RBBB3$`Galileo%Post` < 101, 4, NA))))
+
+RBBB3$GPre = ifelse(is.na(RBBB3$GPre), 0, RBBB3$GPre)
+RBBB3$Pre = rowSums(RBBB3[,c("Illumpre", "DPre")], na.rm=TRUE)
+RBBB3$Pre = ifelse(RBBB3$Pre < 1, RBBB3$GPre, RBBB3$Pre)
+
+RBBB3$DPre[is.na(RBBB3$DPre)] = 0
+RBBB3$Illumpre[is.na(RBBB3$Illumpre)] = 0
+RBBB3$Pre = ifelse(RBBB3$DPre > 0 & RBBB3$Illumpre > 0, RBBB3$DPre, RBBB3$Pre)
+
+RBBB3$GPost = ifelse(is.na(RBBB3$GPost), 0, RBBB3$GPost)
+RBBB3$Post = rowSums(RBBB3[,c("Illumpost", "DPost")], na.rm=TRUE)
+RBBB3$Post = ifelse(RBBB3$Post < 1, RBBB3$GPost, RBBB3$Post)
+
+RBBB3$DPost[is.na(RBBB3$DPost)] = 0
+RBBB3$Illumpost[is.na(RBBB3$Illumpost)] = 0
+RBBB3$Post = ifelse(RBBB3$DPost > 0 & RBBB3$Illumpost > 0, RBBB3$DPost, RBBB3$Post)
+
+
+RBBB4 = RBBB3[,c("Student Id","School","District","CalendarYear","Participate", "Pre", "Post")]
+RBBB4$Pre = ifelse(RBBB4$Pre == 0, NA, RBBB4$Pre)
+RBBB4$Post = ifelse(RBBB4$Post == 0, NA, RBBB4$Post)
+RBBB4$Participate = ifelse(RBBB4$Participate == "Yes", 1, 0)
+RBBB4 = na.omit(RBBB4)
+RBBB4$Improved = RBBB4$Post- RBBB4$Pre
+
+
+```
+
+
+## Question 1
+
+Regressions
+K Nearest Neighbor
+
+Regressions for Statewide tests
+
+```{r}
+# Regression
+library(plotly)
+
+income = na.omit(income)
+
+y = income$`Percent Passing`
+x = income$Median_Income
+
+mod = lm(`Percent Passing` ~ Median_Income, data =  income)
+
+yax = list(title = "Percent Passing")
+xax = list(title = "Income")
+
+fig = plot_ly(x=x, y=y, type="scatter", 
+        mode="markers", 
+        name="Data",
+        marker = list(color = 'black', size = 1),
+        width=700, height=400) %>%
+        add_lines(x = x, y = fitted(mod), name="Fitted", marker = list(color = 'rgba(0,0,0,0)')) %>%
+        layout(xaxis = xax, yaxis = yax)
+
+config(fig, displaylogo=FALSE)
+
+```
+
+```{r}
+summary(mod)
+```
+
+```{r}
+# Free Reduced Test Scores
+FR2 = na.omit(FR2)
+FR3 = na.omit(FR3)
+FR2 = filter(FR2, `Test Results Count_Number Passing` > 0)
+FR3 = filter(FR3, `Free or Reduced_Number Passing` > 0)
+
+mod = lm(`Test Results Count_Number Passing` ~`Test Results Count_Number Tested`, data =  FR2)
+
+x = FR2$`Test Results Count_Number Tested`
+y = FR2$`Test Results Count_Number Passing`
+
+xax = list(title = "Number Tested",range=c(0,700))
+yax = list(title = "Number Passing", range= c(0,400))
+
+fig = plot_ly(x=x, y=y, type="scatter", 
+        mode="markers", alpha = .5,
+        name="Data",
+        marker = list(color = 'black', size = 1),
+        width=700, height=400) %>%
+        add_lines(x = x, y = fitted(mod), name="Fitted", marker = list(color = 'rgba(0,0,0,0)')) %>%
+        layout(xaxis = xax, yaxis = yax)
+
+config(fig, displaylogo=FALSE)
+
+mod2 = lm(`Free or Reduced_Number Passing` ~`Free or Reduced_Number Tested`, data =  FR3)
+
+x = FR3$`Free or Reduced_Number Tested`
+y = FR3$`Free or Reduced_Number Passing`
+
+xax = list(title = "Number Tested",range=c(0,700))
+yax = list(title = "Number Passing", range= c(0,400))
+
+fig = plot_ly(x=x, y=y, type="scatter", 
+        mode="markers", alpha = .5,
+        name="Data",
+        marker = list(color = 'black', size = 1),
+        width=700, height=400) %>%
+        add_lines(x = x, y = fitted(mod2), name="Fitted", marker = list(color = 'rgba(0,0,0,0)')) %>%
+        layout(xaxis = xax, yaxis = yax)
+
+config(fig, displaylogo=FALSE)
+
+```
+
+
+```{r}
+summary(mod)
+summary(mod2)
+```
+
+
+K Nearest Neighbors
+```{r}
+library(class)
+library(kknn)
+library(plyr)
+library(ggplot2)
+
+FR2$type = rep(0)
+FR3$type = rep(1)
+colnames(FR2) = c("Number_Tested", "Number_Passing", "Type") 
+colnames(FR3) = c("Number_Tested", "Number_Passing", "Type") 
+
+FR4 = rbind(FR2, FR3)
+FR4 = na.omit(FR4)
+
+set.seed(12345)
+trainIndex <- sample(1:nrow(FR4), 0.7*nrow(FR4)) # 70% training data
+train <- FR4[trainIndex, ]
+test <- FR4[-trainIndex, ]
+
+length(train[, 1:2])
+length(train[, 3])
+
+predict <- knn(train = train[,1:2], test = test[,1:2], cl = train$Type, k = 19)
+cmatrix = table(predict, test$Type)
+cmatrix
+
+accuracy <- sum(diag(cmatrix)) / sum(cmatrix)
+accuracy
+
+plot.df = data.frame(test, predict)
+
+plot.df1 = data.frame(x = plot.df$Number_Tested, 
+                      y = plot.df$Number_Passing, 
+                      predicted = plot.df$predict)
+
+find_hull = function(df) df[chull(df$x, df$y), ]
+boundary = ddply(plot.df1, .variables = "predict", .fun = find_hull)
+
+ggplot(plot.df, aes(Number_Tested, Number_Passing, color = predict, fill = predict)) + 
+  geom_point(size = 5) + 
+  geom_polygon(data = boundary, aes(x,y), alpha = 0.5)
+
+```
+
+
+## Conclusions
+
+We are able to predict whether or not a student would have a Free/Reduced lunch 67% of the time. From the regressions we were clearly able to see that there was a difference between the two groups. It's not a stark difference but so far it has proven
+
+
+
+```{r}
+White = ifelse(Ethnicity2$Subgroup == 'White', 1, 0)
+Hispanic = ifelse(Ethnicity2$Subgroup == 'Hispanic/Latino', 1, 0)
+AfricanA = ifelse(Ethnicity2$Subgroup == 'African American', 1, 0)
+AIndian = ifelse(Ethnicity2$Subgroup == 'American Indian/Alaska Native', 1, 0)
+Asian = ifelse(Ethnicity2$Subgroup == 'Asian', 1, 0)
+PIslander = ifelse(Ethnicity2$Subgroup == 'Native Hawaiian/Other Pacific Islander', 1, 0)
+
+City = ifelse(Ethnicity2$Location == 'City', 1, 0)
+Town = ifelse(Ethnicity2$Location == 'Town', 1, 0)
+Suburb = ifelse(Ethnicity2$Location == 'Suburb', 1, 0)
+Rural = ifelse(Ethnicity2$Location == 'Rural', 1, 0)
+
+
+Ethnicity3 <- data.frame(White, Hispanic, AfricanA, AIndian, Asian, PIslander, City, Town, Suburb, Rural, PovertyRate = Ethnicity2$`Poverty rate`,SpecialEd = Ethnicity2$`Special education population`, StudentSpending = Ethnicity2$`Total per student spending`,TeacherSalary = Ethnicity2$`District average teacher salary`, InstructionSpend = Ethnicity2$Instruction, CSF = Ethnicity2$`District amount from Classroom Site Fund`, PercentPassing = Ethnicity2$`Percent Passing`)
+Ethnicity3 = na.omit(Ethnicity3)
+head(Ethnicity3,5)
+```
+
+```{r}
+model <- lm(PercentPassing~., data = Ethnicity3)
+summary(model)
+
+```
+
+Stepwise
+
+```{r}
+
+step.model = step(model, direction = "both", k = log(nrow(mtcars)), trace = FALSE)
+step.model$coefficients
+
+plot(step.model)
+
+```
+
+LASSO Regression
+```{r}
+library(glmnet)
+
+train = sample(nrow(Ethnicity3), 0.8 * nrow(Ethnicity3))
+test = setdiff(1:nrow(Ethnicity3), train)
+
+x = model.matrix(PercentPassing ~ ., data = Ethnicity3)[, -1]
+y = Ethnicity3$PercentPassing
+fit = glmnet(x[train, ], y[train], alpha = 1, lambda = .01)
+
+pred = predict(fit, newx = x[test, ])
+coef(fit)
+```
+
+Classification Tree
+
+```{r}
+library(tree)
+Ethnicity4 = Ethnicity2[,c("Subgroup","Test Level", "County", "Percent Passing")]
+Ethnicity4$`Percent Passing` = ifelse(Ethnicity4$`Percent Passing` > 50, "Majority Passed", "Majority Failed" )
+Ethnicity4[,c("Subgroup","Test Level", "County", "Percent Passing")] = lapply(Ethnicity4[,c("Subgroup","Test Level", "County", "Percent Passing")], FUN=as.factor)
+Ethnicity4 = na.omit(Ethnicity4)
+
+Ethnicity4$Subgroup = dplyr::recode_factor(Ethnicity4$Subgroup, 'Hispanic/Latino' = "Hispanic", 'American Indian/Alaska Native' = "AIndian", 'Native Hawaiian/Other Pacific Islander' = "PIslander")
+
+
+library(rpart)
+library(rpart.plot)
+
+set.seed(342)
+trainIndex <- sample(1:nrow(Ethnicity4), 0.7*nrow(Ethnicity4)) # 70% training data
+train <- Ethnicity4[trainIndex, ]
+test <- Ethnicity4[-trainIndex, ]
+
+control <- rpart.control(minsplit = 4,
+    minbucket = round(5 / 3),
+    maxdepth = 3,
+    cp = 0)
+
+tree_model <- rpart(`Percent Passing` ~ ., data = train, method = "class", control=control)
+printcp(tree_model)
+
+predictions <- predict(tree_model, newdata = test, type = "class")
+confma = table(test$`Percent Passing`, predictions)
+confma
+
+accuracy = sum(diag(confma)) / sum(confma)
+accuracy
+
+rpart.plot(tree_model)
+
+```
+The classification tree predicted that a majority of White and Asian students pass the 
+It also 
+
+
+Regression Tree
+```{r}
+Ethnicity5 = Ethnicity2[,c("Subgroup", "Median_Income", "Population", "Percent Passing")]
+Ethnicity5 = na.omit(Ethnicity5)
+Ethnicity5[,c("Subgroup")] = lapply(Ethnicity5[,c("Subgroup")], FUN=as.factor)
+Ethnicity5$`Percent Passing` = as.integer(Ethnicity5$`Percent Passing`)
+
+# Renaming
+Ethnicity5$Subgroup = dplyr::recode_factor(Ethnicity5$Subgroup, 'Hispanic/Latino' = "Hispanic", 'American Indian/Alaska Native' = "AIndian", 'Native Hawaiian/Other Pacific Islander' = "PIslander")
+
+fit <- rpart(`Percent Passing` ~ ., data = Ethnicity5)
+
+# Tree Plot
+printcp(fit)
+rpart.plot(fit)
+
+```
+
+# Question 2
+
+Regression
+Stepwise
+Lasso
+Logistic Regression
+Naive Bayes
+K means
+
+## Regression
+
+```{r}
+model <- lm(Improved ~ Participate, data = RBBB4)
+summary(model)
+
+
+y = RBBB4$Improved
+x = RBBB4$Participate
+xax = list(title = "Participated in RBBB")
+yax = list(title = "Improved")
+
+fig = plot_ly(x=x, y=y, type="scatter", 
+        mode="markers", 
+        name="Data",
+        marker = list(color = 'black', size = 1),
+        width=700, height=400) %>%
+        add_lines(x = x, y = fitted(model), name="Fitted", marker = list(color = 'rgba(0,0,0,0)')) %>%
+        layout(xaxis = xax, yaxis = yax)
+fig
+```
+## Logistic Regression
+
+```{r}
+library(glmnet)
+
+logi = glm(Participate ~ Pre + Post, data = RBBB4, family= "binomial")
+summary(logi)
+
+RBBBL = expand.grid(Pre = seq(from = min(RBBB4$Pre), to = max(RBBB4$Pre), length.out = 100), Post = seq(from = min(RBBB4$Post), to = max(RBBB4$Post), length.out = 100))
+
+RBBBL$prob <- predict(logi, RBBBL, type = "response")
+
+ggplot(RBBBL, aes(x = Pre, y = Post, z = prob)) +
+  geom_contour(aes(color = ..level..), bins = 20) +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(x = "Pre", y = "Post", z = "Predicted Probability") +
+  theme_bw()
+```
+
+## Naive Bayes
+
+
+```{r cars}
+library(caTools)
+library(e1071)
+
+set.seed(1234)
+
+RBBB3 = RBBB2[,c("DIBELSCompositeScorePre","DIBELSCompositeScorePost","Participate")]
+na.omit(RBBB3)
+RBBB3 = filter(RBBB3, `DIBELSCompositeScorePre` > 0)
+
+## Whether or not they are in RBBB
+RBBB3$Participate = ifelse(RBBB3$Participate == "Yes",1,0)
+
+
+
+mask = sample.split(RBBB3$Participate, SplitRatio = 0.7) 
+train = subset(RBBB3, mask == TRUE)
+test = subset(RBBB3, mask == FALSE)
+
+mod = naiveBayes(x = train[,c("DIBELSCompositeScorePre","DIBELSCompositeScorePost")],
+                 y = train$Participate)
+
+# Predicting test data (RBBB student or not)
+y_pred = predict(mod, newdata = test[,c("DIBELSCompositeScorePre","DIBELSCompositeScorePost")])
+
+
+# Training data
+
+data = train
+
+# Creating a meshgrid of points to be colored as green (1) or red (0)
+minX1 = min(data[,1]); maxX1 = max(data[,1]); range1 = diff(range(data[,1]))
+minX2 = min(data[,2]); maxX2 = max(data[,2]); range2 = diff(range(data[,2]))
+len = 120
+X1 = seq(from=minX1-0.1*range1, to=maxX1+0.1*range1, length.out=len)
+X2 = seq(from=minX2-0.1*range2, to=maxX2+0.1*range2, length.out=len)
+
+grid_data = expand.grid(X1, X2) 
+colnames(grid_data) = c("DIBELSCompositeScorePre", "DIBELSCompositeScorePost")
+
+y_grid = predict(mod, newdata = grid_data) # Assigning 0/1 to each grid point
+
+
+par(mar=c(4,4,1,4)) # Adjust margins around the plot
+plot(data[,c("DIBELSCompositeScorePre","DIBELSCompositeScorePost")],
+     main = "Training Data",
+     xlab = "DIBELSCompositeScorePre", ylab = "DIBELSCompositeScorePost",
+     xlim = range(X1), ylim = range(X2))
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE)
+points(grid_data, pch = '.', col = ifelse(y_grid == 1, "blue3", "red"))
+points(data, pch = 21, bg = ifelse(data[,"Participate"] == 1, "blue4", "red3"))
+
+# Test Data
+
+data = test
+
+minX1 = min(data[,1]); maxX1 = max(data[,1]); range1 = diff(range(data[,1]))
+minX2 = min(data[,2]); maxX2 = max(data[,2]); range2 = diff(range(data[,2]))
+
+X1 = seq(from=minX1-0.1*range1, to=maxX1+0.1*range1, length.out=len)
+X2 = seq(from=minX2-0.1*range2, to=maxX2+0.1*range2, length.out=len)
+
+grid_data = expand.grid(X1, X2) 
+colnames(grid_data) = c("DIBELSCompositeScorePre","DIBELSCompositeScorePost")
+
+y_grid = predict(mod, newdata = grid_data)
+
+par(mar=c(4,4,1,4))
+plot(data[ ,c("DIBELSCompositeScorePre","DIBELSCompositeScorePost")], main = "Test Data",
+     xlab = "DIBELSCompositeScorePre", ylab = "DIBELSCompositeScorePost",
+     xlim = range(X1), ylim = range(X2))
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE)
+points(grid_data, pch = '.', 
+       col = ifelse(y_grid == 1, "blue3", "red"))
+points(data, pch = 21, bg = ifelse(data[,"Participate"] == 1, "blue4", "red3"))
+
+confM = table(test$Participate, y_pred)
+confM
+(confM[1,1]+confM[2,2])/sum(confM)
+```
+
+```{r}
+set.seed(1234)
+
+RBBB4 = RBBB2[,c("GalileoScorePre","GalileoScorePost","Participate")]
+na.omit(RBBB4)
+RBBB4 = filter(RBBB4, `GalileoScorePre` > 0)
+
+
+RBBB4$Participate = ifelse(RBBB4$Participate == "Yes",1,0)
+
+mask = sample.split(RBBB4$Participate, SplitRatio = 0.7) 
+train = subset(RBBB4, mask == TRUE)
+test = subset(RBBB4, mask == FALSE)
+
+mod = naiveBayes(x = train[,c("GalileoScorePre","GalileoScorePost")],
+                 y = train$Participate)
+
+
+y_pred = predict(mod, newdata = test[,c("GalileoScorePre","GalileoScorePost")])
+
+
+data = train
+
+
+minX1 = min(data[,1]); maxX1 = max(data[,1]); range1 = diff(range(data[,1]))
+minX2 = min(data[,2]); maxX2 = max(data[,2]); range2 = diff(range(data[,2]))
+len = 120
+X1 = seq(from=minX1-0.1*range1, to=maxX1+0.1*range1, length.out=len)
+X2 = seq(from=minX2-0.1*range2, to=maxX2+0.1*range2, length.out=len)
+
+grid_data = expand.grid(X1, X2)  
+colnames(grid_data) = c("GalileoScorePre", "GalileoScorePost")
+
+y_grid = predict(mod, newdata = grid_data) 
+
+
+par(mar=c(4,4,1,4)) 
+plot(data[,c("GalileoScorePre","GalileoScorePost")],
+     main = "Training Data",
+     xlab = "GalileoScorePre", ylab = "GalileoScorePost",
+     xlim = range(X1), ylim = range(X2))
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE)
+points(grid_data, pch = '.', col = ifelse(y_grid == 1, "blue3", "red"))
+points(data, pch = 21, bg = ifelse(data[,"Participate"] == 1, "blue4", "red3"))
+
+
+data = test
+
+minX1 = min(data[,1]); maxX1 = max(data[,1]); range1 = diff(range(data[,1]))
+minX2 = min(data[,2]); maxX2 = max(data[,2]); range2 = diff(range(data[,2]))
+
+X1 = seq(from=minX1-0.1*range1, to=maxX1+0.1*range1, length.out=len)
+X2 = seq(from=minX2-0.1*range2, to=maxX2+0.1*range2, length.out=len)
+
+grid_data = expand.grid(X1, X2) 
+colnames(grid_data) = c("DIBELSCompositeScorePre","DIBELSCompositeScorePost")
+
+y_grid = predict(mod, newdata = grid_data)
+
+par(mar=c(4,4,1,4)) 
+plot(data[ ,c("GalileoScorePre","GalileoScorePost")], main = "Test Data",
+     xlab = "GalileoScorePre", ylab = "GalileoScorePost",
+     xlim = range(X1), ylim = range(X2))
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE)
+points(grid_data, pch = '.', 
+       col = ifelse(y_grid == 1, "blue3", "red"))
+points(data, pch = 21, bg = ifelse(data[,"Participate"] == 1, "blue4", "red3"))
+
+confM = table(test$Participate, y_pred)
+confM
+(confM[1,1]+confM[2,2])/sum(confM)
+```
+
+
+## K Means
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+library(animation)
+
+
+RBBB5 = RBBB3
+RBBB5$Participate = ifelse(RBBB5$Participate == "Yes", TRUE, FALSE)
+unique(RBBB5$Participate)
+
+Pre = RBBB5$DIBELSCompositeScorePre
+Post = RBBB5$DIBELSCompositeScorePost
+RBBB5$col = ifelse(RBBB5$Participate == "Yes", "Green", "Red")
+
+par(mai=c(0.4,0.35,0.15,0.1),mgp=c(1,0.3,0))
+plot(x=Pre, y=Post, col=RBBB5$col, pch=16)
+
+
+set.seed(12345); 
+
+kmeans.ani.modif = function (x = cbind(X1 = runif(50), X2 = runif(50)), centers = 2, hints = c("Different Center", "Cluster"), pch = 1:3, col = 1:3)
+  
+{
+   x = as.matrix(x)
+   ocluster = sample(centers, nrow(x), replace = TRUE)
+
+   if (length(centers) == 1){
+      nctr = as.integer(centers)
+      centers = matrix(0,nrow=centers,ncol=2)
+      for (k in 1:nctr){
+      centers[k,] = apply(x[which(ocluster==k),],MARGIN=2,FUN=mean)
+      }
+   } else {centers = as.matrix(centers)}
+   numcent = nrow(centers)
+   dst = matrix(nrow = nrow(x), ncol = numcent)
+   j = 1
+   pch = rep(pch, length = numcent)
+   col = rep(col, length = numcent)
+   for (j in 1:ani.options("nmax")) {
+      
+      ## adding one more copy of the last iteration
+      if (j > ani.options("nmax")){
+         ani.pause()
+         break
+      }
+      
+      dev.hold()
+
+      
+      plot(x, pch = pch[ocluster], col = col[ocluster], 
+           panel.first = grid(),
+           xlab = "Pre Score", ylab = "Post Score",
+           main = "K-means Clustering of RBBB")
+      mtext(hints[1], 4)
+      points(centers, pch = pch[1:numcent], cex = 2, lwd = 2, 
+             col = col[1:numcent])
+      text(x=7,y=1.5,paste0("iteration = ",j),pos=4)
+      ani.pause()
+      for (i in 1:numcent) {
+         dst[, i] = sqrt(apply((t(t(x) - unlist(centers[i, 
+         ])))^2, 1, sum))
+      }
+      ncluster = apply(dst, 1, which.min)
+      plot(x, type = "n",
+           xlab = "Pre Score", ylab = "Post Score",
+           main = "K-means Clustering of RBBB")
+      mtext(hints[2], 4)
+      text(x=7,y=1.5,paste0("iteration = ",j),pos=4)
+      grid()
+      ocenters = centers
+      for (i in 1:numcent) {
+         xx = subset(x, ncluster == i)
+         polygon(xx[chull(xx), ], density = 10, col = col[i], lty = 2)
+         points(xx, pch = pch[i], col = col[i])
+         centers[i, ] = apply(xx, 2, mean)
+      }
+      points(ocenters, cex = 2, col = col[1:numcent], pch = pch[1:numcent], 
+             lwd = 2)
+      ani.pause()
+
+      
+      if (all(centers == ocenters)) 
+               break
+            ocluster = ncluster
+         } #end of for-loop for j
+         invisible(list(cluster = ncluster, centers = centers))
+} #end of the function kmeans.ani.modif
+
+#finally, run the function
+kmeans.ani.modif(x=cbind(X1 = RBBB5$DIBELSCompositeScorePre, X2 = RBBB5$DIBELSCompositeScorePost))
+```
+
+
+
+# Question 3
+
+Guassian Mixture Model
+Naive Bayes
+Logistic Regression
+
+```{r}
+library(mclust)
+fit = Mclust(district3$`Fiscal Year`, G=2, model="V")
+summary(fit)
+```
+
+```{r}
+
+plt1 = plot(fit, "classification")
+plt1
+
+plt2 = plot(fit, "density")
+plt2
+
+```
+
+
+``` {r, warning=FALSE}
+library(e1071)
+library(ggplot2)
+library(dplyr)
+library(klaR)
+
+district4 = district_clean[,c("Number Tested", "Number Passing", "Fiscal Year")]
+district4 = na.omit(district4)
+
+district4$`Fiscal Year` = ifelse(district4$`Fiscal Year` > 2020, "Covid", "NonCovid")
+
+set.seed(123832)
+trainIndex <- sample(1:nrow(district4), 0.7*nrow(district4))
+train <- district4[trainIndex, ]
+test <- district4[-trainIndex, ]
+
+
+train$`Number Tested` <- as.numeric(as.character(train$`Number Tested`))
+train$`Number Passing` <- as.numeric(as.character(train$`Number Passing`))
+train$`Fiscal Year` <- as.character(train$`Fiscal Year`)
+test$`Number Tested` <- as.numeric(as.character(test$`Number Tested`))
+test$`Number Passing` <- as.numeric(as.character(test$`Number Passing`))
+test$`Fiscal Year` <- as.character(test$`Fiscal Year`)
+
+model <- naiveBayes(`Fiscal Year` ~ ., data = train)
+
+x_min <- floor(min(train[, 1])) - 1
+x_max <- ceiling(max(train[, 1])) + 1
+y_min <- floor(min(train[, 2])) - 1
+y_max <- ceiling(max(train[, 2])) + 1
+h <- 0.5 # Step size in the meshgrid
+xx <- seq(x_min, x_max, h)
+yy <- seq(y_min, y_max, h)
+grid <- expand.grid(x = xx, y = yy)
+
+# Make predictions on the meshgrid
+pred <- predict(model, newdata = grid)
+
+# Decision boundary plot
+ggplot(grid, aes(x = x, y = y, color = "pred")) +
+  geom_point(size = 0.5, alpha = 0.2) +
+  scale_color_manual(values = c("Covid" = "red", "NonCovid" = "black")) +
+  geom_point(data = train, aes(x = `Number Tested`, y = `Number Passing`, color = `Fiscal Year`), size = 1) +
+  ggtitle("Naive Bayes Classifier") +
+  xlab("Number Tested") + ylab("Number Passing")
+```
+
+```{r}
+pred2 = predict(model, test)
+confM = table(pred2, test$`Fiscal Year`)
+confM
+
+(sum(diag(confM))/sum(confM))
+```
+
+
+```{r}
+library(dplyr)
+
+district5 = district_clean[,c("Number Tested", "Percent Passing", "Fiscal Year")]
+district5 = na.omit(district5)
+district5 = filter(district5, `Fiscal Year` == 2019 | `Fiscal Year` == 2021)
+
+district5$`Fiscal Year` = ifelse(district5$`Fiscal Year` > 2020, "Covid", "NonCovid")
+
+set.seed(12345)
+trainIndex <- sample(1:nrow(district5), 0.7*nrow(district5))
+train <- district5[trainIndex, ]
+test <- district5[-trainIndex, ]
+
+
+train$`Number Tested` <- as.numeric(as.character(train$`Number Tested`))
+train$`Percent Passing` <- as.numeric(as.character(train$`Percent Passing`))
+train$`Fiscal Year` <- as.character(train$`Fiscal Year`)
+test$`Number Tested` <- as.numeric(as.character(test$`Number Tested`))
+test$`Percent Passing` <- as.numeric(as.character(test$`Percent Passing`))
+test$`Fiscal Year` <- as.character(test$`Fiscal Year`)
+
+model <- naiveBayes(`Fiscal Year` ~ ., data = train)
+
+x_min <- floor(min(train[, 1])) - 1
+x_max <- ceiling(max(train[, 1])) + 1
+y_min <- floor(min(train[, 2])) - 1
+y_max <- ceiling(max(train[, 2])) + 1
+h <- 0.5 # Step size in the meshgrid
+xx <- seq(x_min, x_max, h)
+yy <- seq(y_min, y_max, h)
+grid <- expand.grid(x = xx, y = yy)
+
+# Make predictions on the meshgrid
+pred <- predict(model, newdata = grid)
+
+# Decision boundary plot
+ggplot(grid, aes(x = x, y = y, color = "pred")) +
+  geom_point(size = 0.5, alpha = 0.2) +
+  scale_color_manual(values = c("Covid" = "red", "NonCovid" = "black")) +
+  geom_point(data = train, aes(x = `Number Tested`, y = `Percent Passing`, color = `Fiscal Year`), size = 1) +
+  ggtitle("Naive Bayes Classifier") +
+  xlab("Number Tested") + ylab("Percent Passing")
+
+pred2 = predict(model, test)
+confM = table(pred2, test$`Fiscal Year`)
+confM
+
+(sum(diag(confM))/sum(confM))
+```
+```{r}
+district5$`Fiscal Year` = ifelse(district5$`Fiscal Year` == "Covid",1,0)
+logi = glm(`Fiscal Year` ~., data = district5, family= "binomial")
+summary(logi)
+
+district5L = expand.grid(Pre = seq(from = min(district5$`Number Tested`), to = max(district5$`Number Tested`), length.out = 100), Post = seq(from = min(district5$`Percent Passing`), to = max(district5$`Percent Passing`), length.out = 100))
+
+district5$prob <- predict(logi, district5, type = "response")
+
+ggplot(RBBBL, aes(x = Pre, y = Post, z = prob)) +
+  geom_contour(aes(color = ..level..), bins = 20) +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(x = "Pre", y = "Post", z = "Predicted Probability") +
+  theme_bw()
+
+
+```
+
+## Conclusions
+
+Surprisingly, there was no difference in the test scores in 2021 during covid compared to the rest of the years in Arizona. Although nationwide scores ended up decreasing, it was mostly in math. Arizona's reading scores stayed stagnant. There was an increase in 2019 for reading scores but 2021 and 2022 look similar to previous years. It can be argued that reading scores were increasing until Covid but statistically it looks like reading scores haven't changed in the last 5 years.
+
